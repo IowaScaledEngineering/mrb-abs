@@ -415,7 +415,7 @@ void setSignalB1(uint8_t red, uint8_t yellow, uint8_t green, uint8_t ca)
 {
 	uint8_t mask = ((red?_BV(SIGB1_RED_PD):0) | (yellow?_BV(SIGB1_YEL_PD):0) | (green?_BV(SIGB1_GRN_PD):0));
 	if (ca)
-		PORTD = (PORTD | (_BV(SIGB2_RED_PD) | _BV(SIGB1_YEL_PD) | _BV(SIGB1_GRN_PD))) & ~mask;
+		PORTD = (PORTD | (_BV(SIGB1_RED_PD) | _BV(SIGB1_YEL_PD) | _BV(SIGB1_GRN_PD))) & ~mask;
 	else
 		PORTD = (PORTD & ~(_BV(SIGB1_RED_PD) | _BV(SIGB1_YEL_PD) | _BV(SIGB1_GRN_PD))) | mask;
 }
@@ -445,13 +445,21 @@ void setSignalA2(uint8_t red, uint8_t yellow, uint8_t green, uint8_t ca)
 #define SIGB2_YEL_PC  PC2
 #define SIGB2_GRN_PC  PC1
 
-void setSignalB1(uint8_t red, uint8_t yellow, uint8_t green, uint8_t ca)
+void setSignalB2(uint8_t red, uint8_t yellow, uint8_t green, uint8_t ca)
 {
-	uint8_t mask = ((red?_BV(SIGB2_RED_PD):0) | (yellow?_BV(SIGB2_YEL_PD):0) | (green?_BV(SIGB2_GRN_PD):0));
+	uint8_t mask = ((red?_BV(SIGB2_RED_PC):0) | (yellow?_BV(SIGB2_YEL_PC):0) | (green?_BV(SIGB2_GRN_PC):0));
 	if (ca)
-		PORTC = (PORTC | (_BV(SIGB2_RED_PD) | _BV(SIGB2_YEL_PD) | _BV(SIGB2_GRN_PD))) & ~mask;
+		PORTC = (PORTC | (_BV(SIGB2_RED_PC) | _BV(SIGB2_YEL_PC) | _BV(SIGB2_GRN_PC))) & ~mask;
 	else
-		PORTC = (PORTC & ~(_BV(SIGB2_RED_PD) | _BV(SIGB2_YEL_PD) | _BV(SIGB2_GRN_PD))) | mask;
+		PORTC = (PORTC & ~(_BV(SIGB2_RED_PC) | _BV(SIGB2_YEL_PC) | _BV(SIGB2_GRN_PC))) | mask;
+}
+
+void initSignalOutputs()
+{
+
+	DDRC |= _BV(SIGB2_GRN_PC) | _BV(SIGB2_YEL_PC) | _BV(SIGB2_RED_PC) | _BV(SIGA2_RED_PC);
+	DDRD |= _BV(SIGA2_YEL_PD) | _BV(SIGA2_GRN_PD) | _BV(SIGB1_RED_PD) | _BV(SIGB1_YEL_PD) | _BV(SIGB1_GRN_PD);
+	DDRB |= _BV(SIGA1_GRN_PB) | _BV(SIGA1_YEL_PB) | _BV(SIGA1_RED_PB);
 }
 
 
@@ -462,7 +470,7 @@ int main(void)
 	CodelineStatus codelineE[2] = { INDICATION_STOP, INDICATION_STOP };
 	CodelineStatus codelineW[2] = { INDICATION_STOP, INDICATION_STOP };
 	
-	uint8_t commonAnode = 0;
+	uint8_t commonAnode = 1, i;
 	
 	// Application initialization
 	init();
@@ -476,6 +484,8 @@ int main(void)
 	mrbusPktQueueInitialize(&mrbusRxQueue, mrbusRxPktBufferArray, MRBUS_RX_BUFFER_DEPTH);
 	mrbusInit();
 
+	initSignalOutputs();
+
 	sei();	
 
 	while (1)
@@ -486,24 +496,6 @@ int main(void)
 		if (mrbusPktQueueDepth(&mrbusRxQueue))
 			PktHandler();
 			
-		// FIXME: Do any module-specific behaviours here in the loop.
-		
-		if (decisecs >= update_decisecs && !(mrbusPktQueueFull(&mrbusTxQueue)))
-		{
-			uint8_t txBuffer[MRBUS_BUFFER_SIZE];
-
-			txBuffer[MRBUS_PKT_SRC] = mrbus_dev_addr;
-			txBuffer[MRBUS_PKT_DEST] = 0xFF;
-			txBuffer[MRBUS_PKT_LEN] = 9;
-			txBuffer[5] = 'S';
-			txBuffer[6] = 0;
-			txBuffer[7] = 0;
-			txBuffer[8] = busVoltage;
-			mrbusPktQueuePush(&mrbusTxQueue, txBuffer, txBuffer[MRBUS_PKT_LEN]);
-			decisecs = 0;
-		}	
-
-
 		// Convert bits from various occupancy packets into codeline status
 		// Fixme - might as well read aspects from EEPROM
 		for (i=0; i<2; i++)
@@ -675,6 +667,22 @@ int main(void)
 				setSignalB2(0,0,0, commonAnode);
 				break;
 		}
+
+		
+		if (decisecs >= update_decisecs && !(mrbusPktQueueFull(&mrbusTxQueue)))
+		{
+			uint8_t txBuffer[MRBUS_BUFFER_SIZE];
+
+			txBuffer[MRBUS_PKT_SRC] = mrbus_dev_addr;
+			txBuffer[MRBUS_PKT_DEST] = 0xFF;
+			txBuffer[MRBUS_PKT_LEN] = 9;
+			txBuffer[5] = 'S';
+			txBuffer[6] = signalAspectE[0] | (signalAspectW[0]<<4);
+			txBuffer[7] = signalAspectE[1] | (signalAspectW[1]<<4);
+			txBuffer[8] = busVoltage;
+			mrbusPktQueuePush(&mrbusTxQueue, txBuffer, txBuffer[MRBUS_PKT_LEN]);
+			decisecs = 0;
+		}	
 		
 
 		if (mrbusPktQueueDepth(&mrbusTxQueue))
