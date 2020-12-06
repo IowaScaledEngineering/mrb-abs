@@ -26,84 +26,75 @@ LICENSE:
 #include <avr/wdt.h>
 #include <util/delay.h>
 #include "mrbus.h"
+#include "signal-output.h"
 
 uint8_t mrbus_dev_addr = 0;
 uint8_t pkt_count = 0;
 
 
-#define EE_E1_OCC_ADDR     0x10
-#define EE_E1_APRCH_ADDR   0x11
-#define EE_E1_APRCH2_ADDR  0x12
-#define EE_E1_TMBL_ADDR    0x13
-#define EE_W1_OCC_ADDR     0x14
-#define EE_W1_APRCH_ADDR   0x15
-#define EE_W1_APRCH2_ADDR  0x16
-#define EE_W1_TMBL_ADDR    0x17
+#define EE_S1_OCC_ADDR     0x10
+#define EE_S1_APRCH_ADDR   0x11
+#define EE_S1_APRCH2_ADDR  0x12
+#define EE_S1_TMBL_ADDR    0x13
+#define EE_S2_OCC_ADDR     0x14
+#define EE_S2_APRCH_ADDR   0x15
+#define EE_S2_APRCH2_ADDR  0x16
+#define EE_S2_TMBL_ADDR    0x17
+#define EE_S3_OCC_ADDR     0x18
+#define EE_S3_APRCH_ADDR   0x19
+#define EE_S3_APRCH2_ADDR  0x1A
+#define EE_S3_TMBL_ADDR    0x1B
+#define EE_S4_OCC_ADDR     0x1C
+#define EE_S4_APRCH_ADDR   0x1D
+#define EE_S4_APRCH2_ADDR  0x1E
+#define EE_S4_TMBL_ADDR    0x1F
 
-#define EE_E2_OCC_ADDR     0x18
-#define EE_E2_APRCH_ADDR   0x19
-#define EE_E2_APRCH2_ADDR  0x1A
-#define EE_E2_TMBL_ADDR    0x1B
-#define EE_W2_OCC_ADDR     0x1C
-#define EE_W2_APRCH_ADDR   0x1D
-#define EE_W2_APRCH2_ADDR  0x1E
-#define EE_W2_TMBL_ADDR    0x1F
+#define EE_S1_OCC_PKT      0x20
+#define EE_S1_APRCH_PKT    0x21
+#define EE_S1_APRCH2_PKT   0x22
+#define EE_S1_TMBL_PKT     0x23
+#define EE_S2_OCC_PKT      0x24
+#define EE_S2_APRCH_PKT    0x25
+#define EE_S2_APRCH2_PKT   0x26
+#define EE_S2_TMBL_PKT     0x27
+#define EE_S3_OCC_PKT      0x28
+#define EE_S3_APRCH_PKT    0x29
+#define EE_S3_APRCH2_PKT   0x2A
+#define EE_S3_TMBL_PKT     0x2B
+#define EE_S4_OCC_PKT      0x2C
+#define EE_S4_APRCH_PKT    0x2D
+#define EE_S4_APRCH2_PKT   0x2E
+#define EE_S4_TMBL_PKT     0x2F
 
-#define EE_E1_OCC_PKT      0x20
-#define EE_E1_APRCH_PKT    0x21
-#define EE_E1_APRCH2_PKT   0x22
-#define EE_E1_TMBL_PKT     0x23
-#define EE_W1_OCC_PKT      0x24
-#define EE_W1_APRCH_PKT    0x25
-#define EE_W1_APRCH2_PKT   0x26
-#define EE_W1_TMBL_PKT     0x27
+#define EE_S1_OCC_BITBYTE     0x30
+#define EE_S1_APRCH_BITBYTE   0x31
+#define EE_S1_APRCH2_BITBYTE  0x32
+#define EE_S1_TMBL_BITBYTE    0x33
+#define EE_S2_OCC_BITBYTE     0x34
+#define EE_S2_APRCH_BITBYTE   0x35
+#define EE_S2_APRCH2_BITBYTE  0x36
+#define EE_S2_TMBL_BITBYTE    0x37
+#define EE_S3_OCC_BITBYTE     0x38
+#define EE_S3_APRCH_BITBYTE   0x39
+#define EE_S3_APRCH2_BITBYTE  0x3A
+#define EE_S3_TMBL_BITBYTE    0x3B
+#define EE_S4_OCC_BITBYTE     0x3C
+#define EE_S4_APRCH_BITBYTE   0x3D
+#define EE_S4_APRCH2_BITBYTE  0x3E
+#define EE_S4_TMBL_BITBYTE    0x3F
 
-#define EE_E2_OCC_PKT      0x28
-#define EE_E2_APRCH_PKT    0x29
-#define EE_E2_APRCH2_PKT   0x2A
-#define EE_E2_TMBL_PKT     0x2B
-#define EE_W2_OCC_PKT      0x2C
-#define EE_W2_APRCH_PKT    0x2D
-#define EE_W2_APRCH2_PKT   0x2E
-#define EE_W2_TMBL_PKT     0x2F
-
-#define EE_E1_OCC_BITBYTE     0x30
-#define EE_E1_APRCH_BITBYTE   0x31
-#define EE_E1_APRCH2_BITBYTE  0x32
-#define EE_E1_TMBL_BITBYTE    0x33
-#define EE_W1_OCC_BITBYTE     0x34
-#define EE_W1_APRCH_BITBYTE   0x35
-#define EE_W1_APRCH2_BITBYTE  0x36
-#define EE_W1_TMBL_BITBYTE    0x37
-
-#define EE_E2_OCC_BITBYTE     0x38
-#define EE_E2_APRCH_BITBYTE   0x39
-#define EE_E2_APRCH2_BITBYTE  0x3A
-#define EE_E2_TMBL_BITBYTE    0x3B
-#define EE_W2_OCC_BITBYTE     0x3C
-#define EE_W2_APRCH_BITBYTE   0x3D
-#define EE_W2_APRCH2_BITBYTE  0x3E
-#define EE_W2_TMBL_BITBYTE    0x3F
-
-#define OCCUPANCY_E_OCC  0x01
-#define OCCUPANCY_E_ADV  0x02
-#define OCCUPANCY_E_ADV2 0x04
-#define OCCUPANCY_E_TMBL 0x08
-#define OCCUPANCY_W_OCC  0x10
-#define OCCUPANCY_W_ADV  0x20
-#define OCCUPANCY_W_ADV2 0x40
-#define OCCUPANCY_W_TMBL 0x80
+#define EE_S1_CONFIG          0x40
+#define EE_S2_CONFIG          0x41
+#define EE_S3_CONFIG          0x42
+#define EE_S4_CONFIG          0x43
 
 
-// ******** Start 100 Hz Timer - Very Accurate Version
+#define OCCUPANCY_OCC  0x01
+#define OCCUPANCY_ADV  0x02
+#define OCCUPANCY_ADV2 0x04
+#define OCCUPANCY_TMBL 0x08
 
-// Initialize a 100Hz timer for use in triggering events.
-// If you need the timer resources back, you can remove this, but I find it
-// rather handy in triggering things like periodic status transmissions.
-// If you do remove it, be sure to yank the interrupt handler and ticks/secs as well
-// and the call to this function in the main function
 
-volatile uint8_t ticks;
 volatile uint16_t decisecs=0;
 volatile uint16_t update_decisecs=10;
 
@@ -112,32 +103,32 @@ volatile uint8_t eventFlags = 0;
 void initialize100HzTimer(void)
 {
 	// Set up timer 1 for 100Hz interrupts
-	TCCR1A = 0;
-	TCCR1B = _BV(CS11) | _BV(CS10);
-	TCCR1C = 0;
-	TIMSK1 = _BV(TOIE1);
-	ticks = 0;
+	TCNT0 = 0;
+	OCR0A = 0xC2;
 	decisecs = 0;
+	TCCR0A = _BV(WGM01);
+	TCCR0B = _BV(CS02) | _BV(CS00);
+	TIMSK0 |= _BV(OCIE0A);
 }
 
 #define EVENT_1HZ_BLINK  0x04
 
-ISR(TIMER1_OVF_vect)
+ISR(TIMER0_COMPA_vect)
 {
 	static uint8_t hzTimer = 0;
+	static uint8_t ticks=0;
 
-	TCNT1 += 0xF3CB;
 	if (++ticks >= 10)
 	{
 		ticks = 0;
 		decisecs++;
 	}
-	if (hzTimer++ >= 5)
+
+	if (hzTimer++ >= 50)
 	{
 		hzTimer = 0;
 		eventFlags ^= EVENT_1HZ_BLINK;
 	}
-	
 }
 
 // **** Bus Voltage Monitor
@@ -161,7 +152,7 @@ ISR(ADC_vect)
 	}
 }
 
-uint8_t occupancyStatus[2] = {0,0};
+uint8_t occupancyStatus[4] = {0,0,0,0};
 
 void PktHandler(void)
 {
@@ -279,20 +270,20 @@ void PktHandler(void)
 	}
 
 
-	for (i=0; i<(EE_E1_OCC_PKT - EE_E1_OCC_ADDR); i++)
+	for (i=0; i<(EE_S1_OCC_PKT - EE_S1_OCC_ADDR); i++)
 	{
-		if (rxBuffer[MRBUS_PKT_SRC] == eeprom_read_byte((uint8_t*)(i+EE_E1_OCC_ADDR)))
+		if (rxBuffer[MRBUS_PKT_SRC] == eeprom_read_byte((uint8_t*)(i+EE_S1_OCC_ADDR)))
 		{
-			if (rxBuffer[MRBUS_PKT_TYPE] == eeprom_read_byte((uint8_t*)(i+EE_E1_OCC_PKT)))
+			if (rxBuffer[MRBUS_PKT_TYPE] == eeprom_read_byte((uint8_t*)(i+EE_S1_OCC_PKT)))
 			{
-				uint8_t byteNum = eeprom_read_byte((uint8_t*)(i+EE_E1_OCC_BITBYTE));
+				uint8_t byteNum = eeprom_read_byte((uint8_t*)(i+EE_S1_OCC_BITBYTE));
 				uint8_t bitNum = (byteNum>>5) & 0x07;
 				byteNum &= 0x1F;
 	
 				if (rxBuffer[byteNum] & (1<<bitNum))
-					occupancyStatus[i/8] |= 1<<(i%8);
+					occupancyStatus[i/4] |= 1<<(i%4);
 				else
-					occupancyStatus[i/8] &= ~(1<<(i%8));
+					occupancyStatus[i/4] &= ~(1<<(i%4));
 			}
 		}
 	}
@@ -313,20 +304,9 @@ PktIgnore:
 
 void init(void)
 {
-	// FIXME:  Do any initialization you need to do here.
-	
-	// Clear watchdog (in the case of an 'X' packet reset)
 	MCUSR = 0;
-#ifdef ENABLE_WATCHDOG
-	// If you don't want the watchdog to do system reset, remove this chunk of code
 	wdt_reset();
-	WDTCSR |= _BV(WDE) | _BV(WDCE);
-	WDTCSR = _BV(WDE) | _BV(WDP2) | _BV(WDP1); // Set the WDT to system reset and 1s timeout
-	wdt_reset();
-#else
-	wdt_reset();
-	wdt_disable();
-#endif	
+	wdt_enable(WDTO_1S);
 
 	pkt_count = 0;
 
@@ -342,15 +322,7 @@ void init(void)
 	update_decisecs = (uint16_t)eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_UPDATE_L) 
 		| (((uint16_t)eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_UPDATE_H)) << 8);
 
-	// This line assures that update_decisecs is at least 1
-	update_decisecs = max(1, update_decisecs);
-	
-	// FIXME: This line assures that update_decisecs is 2 seconds or less
-	// You probably don't want this, but it prevents new developers from wondering
-	// why their new node doesn't transmit (uninitialized eeprom will make the update
-	// interval 64k decisecs, or about 110 hours)  You'll probably want to make this
-	// something more sane for your node type, or remove it entirely.
-	update_decisecs = min(20, update_decisecs);
+	update_decisecs = min(20, max(1, update_decisecs));
 
 
 
@@ -394,83 +366,15 @@ typedef enum
 	INDICATION_CLEAR              = 4
 } CodelineStatus;
 
-#define SIGA1_RED_PB  PB2
-#define SIGA1_YEL_PB  PB1
-#define SIGA1_GRN_PB  PB0
-
-void setSignalA1(uint8_t red, uint8_t yellow, uint8_t green, uint8_t ca)
-{
-	uint8_t mask = ((red?_BV(SIGA1_RED_PB):0) | (yellow?_BV(SIGA1_YEL_PB):0) | (green?_BV(SIGA1_GRN_PB):0));
-	if (ca)
-		PORTB = (PORTB | (_BV(SIGA1_RED_PB) | _BV(SIGA1_YEL_PB) | _BV(SIGA1_GRN_PB))) & ~mask;
-	else
-		PORTB = (PORTB & ~(_BV(SIGA1_RED_PB) | _BV(SIGA1_YEL_PB) | _BV(SIGA1_GRN_PB))) | mask;
-}
-
-#define SIGB1_RED_PD  PD5
-#define SIGB1_YEL_PD  PD4
-#define SIGB1_GRN_PD  PD3
-
-void setSignalB1(uint8_t red, uint8_t yellow, uint8_t green, uint8_t ca)
-{
-	uint8_t mask = ((red?_BV(SIGB1_RED_PD):0) | (yellow?_BV(SIGB1_YEL_PD):0) | (green?_BV(SIGB1_GRN_PD):0));
-	if (ca)
-		PORTD = (PORTD | (_BV(SIGB1_RED_PD) | _BV(SIGB1_YEL_PD) | _BV(SIGB1_GRN_PD))) & ~mask;
-	else
-		PORTD = (PORTD & ~(_BV(SIGB1_RED_PD) | _BV(SIGB1_YEL_PD) | _BV(SIGB1_GRN_PD))) | mask;
-}
-
-#define SIGA2_RED_PC  PC0
-#define SIGA2_YEL_PD  PD7
-#define SIGA2_GRN_PD  PD6
-
-void setSignalA2(uint8_t red, uint8_t yellow, uint8_t green, uint8_t ca)
-{
-	uint8_t maskc = (red?_BV(SIGA2_RED_PC):0);
-	uint8_t maskd = (yellow?_BV(SIGA2_YEL_PD):0) | (green?_BV(SIGA2_GRN_PD):0);
-	
-	if (ca)
-	{
-		PORTC = (PORTC | (_BV(SIGA2_RED_PC))) & ~maskc;
-		PORTD = (PORTD | (_BV(SIGA2_YEL_PD) | _BV(SIGA2_GRN_PD))) & ~maskd;
-	}
-	else
-	{
-		PORTC = (PORTC & ~(_BV(SIGA2_RED_PC))) | maskc;
-		PORTD = (PORTD & ~(_BV(SIGA2_YEL_PD) | _BV(SIGA2_GRN_PD))) | maskd;
-	}
-}
-
-#define SIGB2_RED_PC  PC3
-#define SIGB2_YEL_PC  PC2
-#define SIGB2_GRN_PC  PC1
-
-void setSignalB2(uint8_t red, uint8_t yellow, uint8_t green, uint8_t ca)
-{
-	uint8_t mask = ((red?_BV(SIGB2_RED_PC):0) | (yellow?_BV(SIGB2_YEL_PC):0) | (green?_BV(SIGB2_GRN_PC):0));
-	if (ca)
-		PORTC = (PORTC | (_BV(SIGB2_RED_PC) | _BV(SIGB2_YEL_PC) | _BV(SIGB2_GRN_PC))) & ~mask;
-	else
-		PORTC = (PORTC & ~(_BV(SIGB2_RED_PC) | _BV(SIGB2_YEL_PC) | _BV(SIGB2_GRN_PC))) | mask;
-}
-
-void initSignalOutputs()
-{
-
-	DDRC |= _BV(SIGB2_GRN_PC) | _BV(SIGB2_YEL_PC) | _BV(SIGB2_RED_PC) | _BV(SIGA2_RED_PC);
-	DDRD |= _BV(SIGA2_YEL_PD) | _BV(SIGA2_GRN_PD) | _BV(SIGB1_RED_PD) | _BV(SIGB1_YEL_PD) | _BV(SIGB1_GRN_PD);
-	DDRB |= _BV(SIGA1_GRN_PB) | _BV(SIGA1_YEL_PB) | _BV(SIGA1_RED_PB);
-}
-
+#define NUM_SIGNALS  4
 
 int main(void)
 {
-	SignalAspect signalAspectE[2] = { ASPECT_RED, ASPECT_RED };
-	SignalAspect signalAspectW[2] = { ASPECT_RED, ASPECT_RED };	
-	CodelineStatus codelineE[2] = { INDICATION_STOP, INDICATION_STOP };
-	CodelineStatus codelineW[2] = { INDICATION_STOP, INDICATION_STOP };
-	
-	uint8_t commonAnode = 1, i;
+	SignalAspect signalAspect[NUM_SIGNALS] = { ASPECT_RED, ASPECT_RED, ASPECT_RED, ASPECT_RED };	
+	CodelineStatus codeline[NUM_SIGNALS] = { INDICATION_STOP, INDICATION_STOP, INDICATION_STOP, INDICATION_STOP };
+	SignalOutputFunc signalOutputFuncs[NUM_SIGNALS] = { &setSignalS1, &setSignalS2, &setSignalS3, &setSignalS4 };
+	uint8_t signalOptions[NUM_SIGNALS] = {0,0,0,0};
+	uint8_t i;
 	
 	// Application initialization
 	init();
@@ -483,6 +387,9 @@ int main(void)
 	mrbusPktQueueInitialize(&mrbusTxQueue, mrbusTxPktBufferArray, MRBUS_TX_BUFFER_DEPTH);
 	mrbusPktQueueInitialize(&mrbusRxQueue, mrbusRxPktBufferArray, MRBUS_RX_BUFFER_DEPTH);
 	mrbusInit();
+
+	for(i=0; i<NUM_SIGNALS; i++)
+		signalOptions[i] = eeprom_read_byte((uint8_t*)(i+EE_S1_CONFIG));
 
 	initSignalOutputs();
 
@@ -497,177 +404,73 @@ int main(void)
 			PktHandler();
 			
 		// Convert bits from various occupancy packets into codeline status
-		// Fixme - might as well read aspects from EEPROM
-		for (i=0; i<2; i++)
+		for (i=0; i<4; i++)
 		{
-			if (occupancyStatus[i] & (OCCUPANCY_E_OCC | OCCUPANCY_E_TMBL))
-				codelineE[i] = INDICATION_STOP;
-			else if (occupancyStatus[i] & OCCUPANCY_E_ADV)
-				codelineE[i] = INDICATION_APPROACH;
-			else if (occupancyStatus[i] & OCCUPANCY_E_ADV2)
-				codelineE[i] = INDICATION_ADVANCE_APPROACH;
+			if (occupancyStatus[i] & (OCCUPANCY_OCC | OCCUPANCY_TMBL))
+				codeline[i] = INDICATION_STOP;
+			else if (occupancyStatus[i] & OCCUPANCY_ADV)
+				codeline[i] = INDICATION_APPROACH;
+			else if (occupancyStatus[i] & OCCUPANCY_ADV2)
+				codeline[i] = INDICATION_ADVANCE_APPROACH;
 			else 
-				codelineE[i] = INDICATION_CLEAR;
-
-			if (occupancyStatus[i] & (OCCUPANCY_W_OCC | OCCUPANCY_W_TMBL))
-				codelineW[i] = INDICATION_STOP;
-			else if (occupancyStatus[i] & OCCUPANCY_W_ADV)
-				codelineW[i] = INDICATION_APPROACH;
-			else if (occupancyStatus[i] & OCCUPANCY_W_ADV2)
-				codelineW[i] = INDICATION_ADVANCE_APPROACH;
-			else 
-				codelineW[i] = INDICATION_CLEAR;
+				codeline[i] = INDICATION_CLEAR;
 		}			
 
 		// Convert codeline status to aspects
-		for (i=0; i<2; i++)
+		for (i=0; i<4; i++)
 		{
-			switch(codelineE[i])
+			switch(codeline[i])
 			{
 				case INDICATION_CLEAR:
-					signalAspectE[i] = ASPECT_GREEN;
+					signalAspect[i] = ASPECT_GREEN;
 					break;
 
 				case INDICATION_APPROACH:
-					signalAspectE[i] = ASPECT_YELLOW;
+					signalAspect[i] = ASPECT_YELLOW;
 					break;
 
 				case INDICATION_ADVANCE_APPROACH:
-					signalAspectE[i] = ASPECT_FL_YELLOW;
+					signalAspect[i] = ASPECT_FL_YELLOW;
 					break;
 
 				default:
 				case INDICATION_STOP:
-					signalAspectE[i] = ASPECT_RED;
+					signalAspect[i] = ASPECT_RED;
 					break;
 			}
+		}
 
-			switch(codelineW[i])
+
+		for(i=0; i<4; i++)
+		{
+			SignalOutputFunc setSignal = signalOutputFuncs[i];			
+			// Convert aspect to bit output
+			switch(signalAspect[i])
 			{
-				case INDICATION_CLEAR:
-					signalAspectW[i] = ASPECT_GREEN;
+				case ASPECT_RED:
+					setSignal(1,0,0, signalOptions[i]);
 					break;
-
-				case INDICATION_APPROACH:
-					signalAspectW[i] = ASPECT_YELLOW;
+				case ASPECT_YELLOW:
+					setSignal(0,1,0, signalOptions[i]);				
 					break;
-
-				case INDICATION_ADVANCE_APPROACH:
-					signalAspectW[i] = ASPECT_FL_YELLOW;
+				case ASPECT_GREEN:
+					setSignal(0,0,1, signalOptions[i]);				
 					break;
-
+				case ASPECT_FL_RED:
+					setSignal((eventFlags & EVENT_1HZ_BLINK),0,0, signalOptions[i]);
+					break;
+				case ASPECT_FL_YELLOW:
+					setSignal(0,(eventFlags & EVENT_1HZ_BLINK),0, signalOptions[i]);				
+					break;
+				case ASPECT_FL_GREEN:
+					setSignal(0,0,(eventFlags ^= EVENT_1HZ_BLINK), signalOptions[i]);				
+					break;
+				case ASPECT_OFF:
 				default:
-				case INDICATION_STOP:
-					signalAspectW[i] = ASPECT_RED;
+					setSignal(0,0,0, signalOptions[i]);
 					break;
 			}
 		}
-	
-		// Convert aspect to bit output
-		switch(signalAspectE[0])
-		{
-			case ASPECT_RED:
-				setSignalA1(1,0,0, commonAnode);
-				break;
-			case ASPECT_YELLOW:
-				setSignalA1(0,1,0, commonAnode);				
-				break;
-			case ASPECT_GREEN:
-				setSignalA1(0,0,1, commonAnode);				
-				break;
-			case ASPECT_FL_RED:
-				setSignalA1((eventFlags & EVENT_1HZ_BLINK),0,0, commonAnode);
-				break;
-			case ASPECT_FL_YELLOW:
-				setSignalA1(0,(eventFlags & EVENT_1HZ_BLINK),0, commonAnode);				
-				break;
-			case ASPECT_FL_GREEN:
-				setSignalA1(0,0,(eventFlags ^= EVENT_1HZ_BLINK), commonAnode);				
-				break;
-			case ASPECT_OFF:
-			default:
-				setSignalA1(0,0,0, commonAnode);
-				break;
-		}
-
-		switch(signalAspectW[0])
-		{
-			case ASPECT_RED:
-				setSignalB1(1,0,0, commonAnode);
-				break;
-			case ASPECT_YELLOW:
-				setSignalB1(0,1,0, commonAnode);				
-				break;
-			case ASPECT_GREEN:
-				setSignalB1(0,0,1, commonAnode);				
-				break;
-			case ASPECT_FL_RED:
-				setSignalB1((eventFlags & EVENT_1HZ_BLINK),0,0, commonAnode);
-				break;
-			case ASPECT_FL_YELLOW:
-				setSignalB1(0,(eventFlags & EVENT_1HZ_BLINK),0, commonAnode);				
-				break;
-			case ASPECT_FL_GREEN:
-				setSignalB1(0,0,(eventFlags ^= EVENT_1HZ_BLINK), commonAnode);				
-				break;
-			case ASPECT_OFF:
-			default:
-				setSignalB1(0,0,0, commonAnode);
-				break;
-		}
-
-		switch(signalAspectE[1])
-		{
-			case ASPECT_RED:
-				setSignalA2(1,0,0, commonAnode);
-				break;
-			case ASPECT_YELLOW:
-				setSignalA2(0,1,0, commonAnode);				
-				break;
-			case ASPECT_GREEN:
-				setSignalA2(0,0,1, commonAnode);				
-				break;
-			case ASPECT_FL_RED:
-				setSignalA2((eventFlags & EVENT_1HZ_BLINK),0,0, commonAnode);
-				break;
-			case ASPECT_FL_YELLOW:
-				setSignalA2(0,(eventFlags & EVENT_1HZ_BLINK),0, commonAnode);				
-				break;
-			case ASPECT_FL_GREEN:
-				setSignalA2(0,0,(eventFlags ^= EVENT_1HZ_BLINK), commonAnode);				
-				break;
-			case ASPECT_OFF:
-			default:
-				setSignalA2(0,0,0, commonAnode);
-				break;
-		}
-
-		switch(signalAspectW[1])
-		{
-			case ASPECT_RED:
-				setSignalB2(1,0,0, commonAnode);
-				break;
-			case ASPECT_YELLOW:
-				setSignalB2(0,1,0, commonAnode);				
-				break;
-			case ASPECT_GREEN:
-				setSignalB2(0,0,1, commonAnode);				
-				break;
-			case ASPECT_FL_RED:
-				setSignalB2((eventFlags & EVENT_1HZ_BLINK),0,0, commonAnode);
-				break;
-			case ASPECT_FL_YELLOW:
-				setSignalB2(0,(eventFlags & EVENT_1HZ_BLINK),0, commonAnode);				
-				break;
-			case ASPECT_FL_GREEN:
-				setSignalB2(0,0,(eventFlags ^= EVENT_1HZ_BLINK), commonAnode);				
-				break;
-			case ASPECT_OFF:
-			default:
-				setSignalB2(0,0,0, commonAnode);
-				break;
-		}
-
 		
 		if (decisecs >= update_decisecs && !(mrbusPktQueueFull(&mrbusTxQueue)))
 		{
@@ -675,11 +478,13 @@ int main(void)
 
 			txBuffer[MRBUS_PKT_SRC] = mrbus_dev_addr;
 			txBuffer[MRBUS_PKT_DEST] = 0xFF;
-			txBuffer[MRBUS_PKT_LEN] = 9;
+			txBuffer[MRBUS_PKT_LEN] = 11;
 			txBuffer[5] = 'S';
-			txBuffer[6] = signalAspectE[0] | (signalAspectW[0]<<4);
-			txBuffer[7] = signalAspectE[1] | (signalAspectW[1]<<4);
-			txBuffer[8] = busVoltage;
+			txBuffer[6] = signalAspect[0];
+			txBuffer[7] = signalAspect[1];
+			txBuffer[8] = signalAspect[2];
+			txBuffer[9] = signalAspect[3];
+			txBuffer[10] = busVoltage;
 			mrbusPktQueuePush(&mrbusTxQueue, txBuffer, txBuffer[MRBUS_PKT_LEN]);
 			decisecs = 0;
 		}	

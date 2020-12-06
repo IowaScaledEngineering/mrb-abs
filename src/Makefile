@@ -43,8 +43,8 @@ PROGRAMMER_PORT=usb
 
 # MRBus
 DEFINES = -DMRBUS -DENABLE_WATCHDOG -D$(GITREV)
-SRCS = $(BASE_NAME).c $(MRBUS_DIRECTORY)/mrbus-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c
-INCS = $(MRBUS_DIRECTORY)/mrbus.h $(MRBUS_DIRECTORY)/mrbus-avr.h
+SRCS = $(BASE_NAME).c signal-output.c $(MRBUS_DIRECTORY)/mrbus-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c
+INCS = signal-output.h $(MRBUS_DIRECTORY)/mrbus.h $(MRBUS_DIRECTORY)/mrbus-avr.h
 
 # PROGRAMMER_TYPE defines the programmer to be used
 # Common options are usbtiny and avrispmkii
